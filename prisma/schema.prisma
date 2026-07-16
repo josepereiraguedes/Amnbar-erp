@@ -1,0 +1,230 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  password       String
+  role           String          // ADMIN, MANAGER, PRODUCTION, PURCHASING, SALES, STOCK
+  active         Boolean         @default(true)
+  stockMovements StockMovement[]
+  productionOrders ProductionOrder[]
+  salesOrders    SalesOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+}
+
+model Collection {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+}
+
+model SockType {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+}
+
+model Warehouse {
+  id            String          @id @default(uuid())
+  name          String          @unique
+  stockItems    StockItem[]
+  movementsFrom StockMovement[] @relation("FromWarehouse")
+  movementsTo   StockMovement[] @relation("ToWarehouse")
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  sku             String   @unique
+  internalCode    String?  @unique
+  barcode         String?  @unique
+  name            String
+  description     String?
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  brand           String?
+  collectionId    String?
+  collection      Collection? @relation(fields: [collectionId], references: [id])
+  model           String?
+  typeId          String
+  sockType        SockType @relation(fields: [typeId], references: [id])
+  color           String?
+  size            String?
+  imageUrl        String?
+  supplier        String?
+  costPrice       Float    @default(0)
+  salePrice       Float    @default(0)
+  margin          Float    @default(0) // (salePrice - costPrice) / salePrice
+  weight          Float?
+  minStock        Int      @default(0)
+  maxStock        Int      @default(0)
+  currentStock    Int      @default(0)
+  location        String?
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
+  observations    String?
+
+  stockItems      StockItem[]
+  stockMovements  StockMovement[]
+  productionOrders ProductionOrder[]
+  salesOrderItems SalesOrderItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([name, sku, internalCode, barcode, supplier, color, size])
+}
+
+model StockItem {
+  id          String    @id @default(uuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  quantity    Int       @default(0)
+  
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+model StockMovement {
+  id              String    @id @default(uuid())
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  
+  type            String    // IN, OUT, TRANSFER, ADJUSTMENT, INVENTORY, RESERVE, SEPARATION
+  
+  fromWarehouseId String?
+  fromWarehouse   Warehouse? @relation("FromWarehouse", fields: [fromWarehouseId], references: [id])
+  
+  toWarehouseId   String?
+  toWarehouse     Warehouse? @relation("ToWarehouse", fields: [toWarehouseId], references: [id])
+  
+  quantity        Int
+  reason          String?
+  automatic       Boolean   @default(false)
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime  @default(now())
+}
+
+model RawMaterial {
+  id              String   @id @default(uuid())
+  sku             String?  @unique
+  name            String
+  type            String   // YARN, LABEL, PACKAGING, CHEMICAL, OTHER
+  supplier        String?
+  unit            String   // KG, UN, M, L
+  costPerUnit     Float    @default(0)
+  currentStock    Float    @default(0)
+  minStock        Float    @default(0)
+  
+  productionItems ProductionOrderItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ProductionOrder {
+  id              String    @id @default(uuid())
+  orderNumber     String    @unique
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  quantity        Int
+  status          String    // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  
+  startDate       DateTime?
+  endDate         DateTime?
+  notes           String?
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  items           ProductionOrderItem[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ProductionOrderItem {
+  id                String          @id @default(uuid())
+  productionOrderId String
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  
+  rawMaterialId     String
+  rawMaterial       RawMaterial     @relation(fields: [rawMaterialId], references: [id])
+  
+  quantity          Float
+}
+
+model Customer {
+  id              String   @id @default(uuid())
+  name            String
+  document        String?  @unique // CPF or CNPJ
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
+  type            String   @default("RETAIL") // RETAIL, WHOLESALE
+  
+  salesOrders     SalesOrder[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SalesOrder {
+  id              String    @id @default(uuid())
+  orderNumber     String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  status          String    // DRAFT, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
+  
+  totalAmount     Float     @default(0)
+  discount        Float     @default(0)
+  netAmount       Float     @default(0)
+  
+  paymentMethod   String?   // CASH, CREDIT_CARD, PIX, BOLETO
+  paymentStatus   String    @default("PENDING") // PENDING, PAID, PARTIAL
+  
+  notes           String?
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  items           SalesOrderItem[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SalesOrderItem {
+  id              String      @id @default(uuid())
+  salesOrderId    String
+  salesOrder      SalesOrder  @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  
+  productId       String
+  product         Product     @relation(fields: [productId], references: [id])
+  
+  quantity        Int
+  unitPrice       Float
+  totalPrice      Float
+}
