@@ -52,7 +52,8 @@ export interface Product {
   color?: string;
   size?: string;
   imageUrl?: string;
-  supplier?: string;
+  supplierId?: string;
+  supplier?: any;
   costPrice: number;
   salePrice: number;
   margin: number;
@@ -64,6 +65,7 @@ export interface Product {
   status: string;
   observations?: string;
   stockItems?: StockItem[];
+  recipeItems?: ProductRecipeItem[];
 }
 
 export interface RawMaterial {
@@ -71,7 +73,8 @@ export interface RawMaterial {
   sku?: string;
   name: string;
   type: string;
-  supplier?: string;
+  supplierId?: string;
+  supplier?: any;
   unit: string;
   costPerUnit: number;
   currentStock: number;
@@ -141,4 +144,12 @@ export interface SalesOrder {
   user?: { name: string };
   items?: SalesOrderItem[];
   createdAt: string;
+}
+
+export interface ProductRecipeItem {
+  id: string;
+  productId: string;
+  rawMaterialId: string;
+  rawMaterial?: RawMaterial;
+  quantity: number;
 }

@@ -10,14 +10,19 @@ export default function RawMaterials() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    name: '', sku: '', type: 'FIOS', supplier: '', unit: 'KG', costPerUnit: 0, currentStock: 0, minStock: 0
+    name: '', sku: '', type: 'FIOS', supplierId: '', unit: 'KG', costPerUnit: 0, currentStock: 0, minStock: 0
   });
+  const [suppliers, setSuppliers] = useState<any[]>([]);
 
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/raw-materials');
-      setItems(data.data);
+      const [{ data: rawRes }, { data: supRes }] = await Promise.all([
+        api.get('/raw-materials'),
+        api.get('/suppliers')
+      ]);
+      setItems(rawRes.data);
+      setSuppliers(supRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -32,7 +37,7 @@ export default function RawMaterials() {
   const handleEdit = (id: string) => {
     const item = items.find(i => i.id === id);
     if (item) {
-      setForm({ ...item, sku: item.sku || '', supplier: item.supplier || '' });
+      setForm({ ...item, sku: item.sku || '', supplierId: item.supplierId || '' });
       setEditingId(id);
       setShowForm(true);
     }
@@ -64,7 +69,7 @@ export default function RawMaterials() {
       }
       setShowForm(false);
       setEditingId(null);
-      setForm({ name: '', sku: '', type: 'FIOS', supplier: '', unit: 'KG', costPerUnit: 0, currentStock: 0, minStock: 0 });
+      setForm({ name: '', sku: '', type: 'FIOS', supplierId: '', unit: 'KG', costPerUnit: 0, currentStock: 0, minStock: 0 });
       fetchItems();
     } catch (error) {
       alert('Erro ao salvar');
@@ -153,7 +158,12 @@ export default function RawMaterials() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fornecedor</label>
-              <input type="text" name="supplier" value={form.supplier} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border" />
+              <select name="supplierId" value={form.supplierId || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border">
+                <option value="">Selecione...</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Custo Un. (R$)</label>

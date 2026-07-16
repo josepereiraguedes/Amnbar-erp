@@ -6,11 +6,12 @@ export const referencesRouter = Router();
 
 referencesRouter.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
-    const [categories, collections, sockTypes, warehouses] = await Promise.all([
+    const [categories, collections, sockTypes, warehouses, suppliers] = await Promise.all([
       prisma.category.findMany(),
       prisma.collection.findMany(),
       prisma.sockType.findMany(),
       prisma.warehouse.findMany(),
+      prisma.supplier.findMany(),
     ]);
 
     res.json({
@@ -20,6 +21,7 @@ referencesRouter.get('/', authenticate, async (req: AuthRequest, res: Response) 
         collections,
         sockTypes,
         warehouses,
+        suppliers,
       }
     });
   } catch (error) {

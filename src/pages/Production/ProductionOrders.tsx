@@ -19,6 +19,35 @@ export default function ProductionOrders() {
     items: [] as { rawMaterialId: string; quantity: number }[]
   });
 
+  
+  const handleProductChange = (newProductId: string) => {
+    const product = products.find(p => p.id === newProductId);
+    let newItems = form.items;
+    
+    if (product && product.recipeItems && product.recipeItems.length > 0) {
+      newItems = product.recipeItems.map((r: any) => ({
+        rawMaterialId: r.rawMaterialId,
+        quantity: r.quantity * form.quantity
+      }));
+    } else {
+       newItems = [];
+    }
+    
+    setForm(prev => ({ ...prev, productId: newProductId, items: newItems }));
+  };
+
+  const handleQuantityChange = (newQty: number) => {
+    if (newQty <= 0) return;
+    const ratio = newQty / form.quantity;
+    
+    const newItems = form.items.map(item => ({
+      ...item,
+      quantity: Number((item.quantity * ratio).toFixed(3))
+    }));
+    
+    setForm(prev => ({ ...prev, quantity: newQty, items: newItems }));
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -163,16 +192,17 @@ export default function ProductionOrders() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Produto a Fabricar</label>
-              <select value={form.productId} onChange={e => setForm({...form, productId: e.target.value})} required className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border">
+              <select value={form.productId} onChange={e => handleProductChange(e.target.value)} required className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border">
+                <option value="">Selecione...</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Quantidade</label>
-              <input type="number" min="1" value={form.quantity} onChange={e => setForm({...form, quantity: Number(e.target.value)})} required className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border" />
+              <input type="number" min="1" value={form.quantity} onChange={e => handleQuantityChange(Number(e.target.value))} required className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border" />
             </div>
             <div className="col-span-1 md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Observações / Ficha Técnica</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Observações</label>
               <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border" />
             </div>
           </div>
@@ -195,6 +225,7 @@ export default function ProductionOrders() {
                   <div className="flex-1">
                     <label className="block text-xs font-medium text-slate-500 uppercase">Matéria-Prima</label>
                     <select value={item.rawMaterialId} onChange={e => handleItemChange(index, 'rawMaterialId', e.target.value)} required className="mt-1 block w-full rounded border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-2 py-1.5 border">
+                      <option value="">Selecione...</option>
                       {rawMaterials.map(rm => <option key={rm.id} value={rm.id}>{rm.name} (Estoque: {rm.currentStock} {rm.unit})</option>)}
                     </select>
                   </div>

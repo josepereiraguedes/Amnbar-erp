@@ -5,7 +5,8 @@ import {
   LayoutDashboard, 
   Package, 
   Factory, 
-  ShoppingCart, 
+  ShoppingCart,
+  ShoppingBag,
   Settings, 
   LogOut,
   Menu,
@@ -44,7 +45,8 @@ export default function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Estoque', path: '/estoque', icon: Package },
     { name: 'Produção', path: '/producao', icon: Factory },
-    { name: 'Vendas & Compras', path: '/vendas', icon: ShoppingCart },
+    { name: 'Compras', path: '/compras', icon: ShoppingBag },
+    { name: 'Vendas', path: '/vendas', icon: ShoppingCart },
     { name: 'Configurações', path: '/configuracoes', icon: Settings },
   ];
 

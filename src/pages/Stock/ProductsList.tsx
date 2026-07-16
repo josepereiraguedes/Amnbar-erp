@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Product } from '../../types';
-import { Search, Edit, Trash2, Package } from 'lucide-react';
+import { Search, Edit, Trash2, Package, ClipboardList } from 'lucide-react';
+import RecipeModal from './RecipeModal';
 
 export default function ProductsList({ onEdit }: { onEdit: (id: string) => void }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedProductForRecipe, setSelectedProductForRecipe] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -28,18 +31,18 @@ export default function ProductsList({ onEdit }: { onEdit: (id: string) => void 
   }, [search]);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      try {
-        await api.delete(`/products/${id}`);
-        fetchProducts();
-      } catch (error: any) {
-        alert('Erro ao excluir: ' + (error.response?.data?.message || 'Erro desconhecido'));
-      }
+    // Removed window.confirm to avoid iframe blocking
+    try {
+      await api.delete(`/products/${id}`);
+      fetchProducts();
+    } catch (error: any) {
+      setErrorMsg('Erro ao excluir: ' + (error.response?.data?.message || 'Erro desconhecido'));
     }
   };
 
   return (
     <div>
+      {errorMsg && <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4 flex justify-between"><span>{errorMsg}</span><button onClick={() => setErrorMsg(null)}>X</button></div>}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-wider">Catálogo de Produtos</h2>
         <div className="relative">
@@ -102,8 +105,11 @@ export default function ProductsList({ onEdit }: { onEdit: (id: string) => void 
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => onEdit(p.id)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4 transition-colors">
-                      <Edit size={18} />
+                    <button title="Ficha Técnica" onClick={() => setSelectedProductForRecipe(p)} className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 mr-4 transition-colors">
+                      <ClipboardList size={18} />
+                    </button>
+                    <button title="Editar" onClick={() => onEdit(p.id)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4 transition-colors">
+                       <Edit size={18} />
                     </button>
                     <button onClick={() => handleDelete(p.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
                       <Trash2 size={18} />
@@ -115,6 +121,15 @@ export default function ProductsList({ onEdit }: { onEdit: (id: string) => void 
           </tbody>
         </table>
       </div>
+      {selectedProductForRecipe && (
+        <RecipeModal
+          product={selectedProductForRecipe}
+          onClose={() => {
+            setSelectedProductForRecipe(null);
+            fetchProducts();
+          }}
+        />
+      )}
     </div>
   );
 }

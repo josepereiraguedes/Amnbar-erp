@@ -12,6 +12,8 @@ import { rawMaterialsRouter } from './backend/routes/raw-materials.routes.js';
 import { productionRouter } from './backend/routes/production.routes.js';
 import { customersRouter } from './backend/routes/customers.routes.js';
 import { salesRouter } from './backend/routes/sales.routes.js';
+import { suppliersRouter } from './backend/routes/suppliers.routes.js';
+import { purchasingRouter } from './backend/routes/purchasing.routes.js';
 import { usersRouter } from './backend/routes/users.routes.js';
 
 async function startServer() {
@@ -33,6 +35,8 @@ async function startServer() {
   app.use('/api/stock', stockRouter);
   app.use('/api/raw-materials', rawMaterialsRouter);
   app.use('/api/production', productionRouter);
+  app.use('/api/suppliers', suppliersRouter);
+  app.use('/api/purchasing', purchasingRouter);
   app.use('/api/customers', customersRouter);
   app.use('/api/sales', salesRouter);
   app.use('/api/users', usersRouter);

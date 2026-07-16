@@ -5,13 +5,14 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
   const [formData, setFormData] = useState<any>({
     sku: '', internalCode: '', barcode: '', name: '', description: '',
     categoryId: '', brand: '', collectionId: '', model: '', typeId: '',
-    color: '', size: '', supplier: '', costPrice: 0, salePrice: 0,
+    color: '', size: '', supplierId: '', costPrice: 0, salePrice: 0,
     weight: 0, minStock: 0, maxStock: 0, location: '', status: 'ACTIVE', observations: ''
   });
   const [image, setImage] = useState<File | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
-  const [refs, setRefs] = useState<{categories: any[], collections: any[], sockTypes: any[]}>({
-    categories: [], collections: [], sockTypes: []
+  const [refs, setRefs] = useState<{categories: any[], collections: any[], sockTypes: any[], suppliers: any[]}>({
+    categories: [], collections: [], sockTypes: [], suppliers: []
   });
 
   useEffect(() => {
@@ -20,7 +21,8 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
       setRefs({
         categories: data.data.categories,
         collections: data.data.collections,
-        sockTypes: data.data.sockTypes
+        sockTypes: data.data.sockTypes,
+        suppliers: data.data.suppliers || []
       });
       
       // select first by default if empty
@@ -35,8 +37,8 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
 
   useEffect(() => {
     if (productId) {
-      api.get(`/products?search=`).then(({ data }) => {
-        const prod = data.data.products.find((p: any) => p.id === productId);
+      api.get(`/products/${productId}`).then(({ data }) => {
+        const prod = data.data;
         if (prod) {
           // Keep only non-null values for form fields
           const cleanProd = Object.keys(prod).reduce((acc: any, key) => {
@@ -67,7 +69,7 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
     e.preventDefault();
     const payload = new FormData();
     Object.keys(formData).forEach(key => {
-      if(key !== 'image' && key !== 'imageUrl' && key !== 'stockItems' && key !== 'category' && key !== 'collection' && key !== 'sockType' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'id' && key !== 'margin' && key !== 'currentStock') {
+      if(key !== 'image' && key !== 'imageUrl' && key !== 'stockItems' && key !== 'category' && key !== 'collection' && key !== 'sockType' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'id' && key !== 'margin' && key !== 'currentStock' && key !== 'recipeItems') {
         payload.append(key, formData[key] === '' ? '' : String(formData[key]));
       }
     });
@@ -83,13 +85,16 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
       }
       onSaved();
     } catch (error: any) {
-      alert('Erro ao salvar: ' + (error.response?.data?.message || 'Erro desconhecido'));
+      const msg = error.response?.data?.message || 'Erro desconhecido';
+      const details = error.response?.data?.errors ? JSON.stringify(error.response.data.errors) : '';
+      setErrorMsg(`Erro ao salvar: ${msg} ${details}`);
       console.error(error.response?.data?.errors);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {errorMsg && <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">{errorMsg}</div>}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-wider">{productId ? 'Editar Produto' : 'Novo Produto'}</h2>
       </div>
@@ -159,7 +164,12 @@ export default function ProductForm({ productId, onSaved }: { productId: string 
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Fornecedor</label>
-          <input type="text" name="supplier" value={formData.supplier} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border" />
+          <select name="supplierId" value={formData.supplierId || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white px-3 py-2 border">
+            <option value="">Selecione...</option>
+            {refs.suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Foto</label>

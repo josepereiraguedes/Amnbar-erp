@@ -9,7 +9,7 @@ const rmSchema = z.object({
   name: z.string().min(1),
   sku: z.string().optional().nullable(),
   type: z.string().min(1),
-  supplier: z.string().optional().nullable(),
+  supplierId: z.string().optional().nullable(),
   unit: z.string().min(1),
   costPerUnit: z.coerce.number().min(0),
   currentStock: z.coerce.number().min(0),
